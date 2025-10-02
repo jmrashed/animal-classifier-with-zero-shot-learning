@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Classifier - Enhanced</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8f9fa;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .upload-area:hover {
+            border-color: #4CAF50;
+            background-color: #f9f9f9;
+        }
+
+        .preview-container {
+            margin: 20px 0;
+            display: none;
+            text-align: center;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background-color: #f44336;
+        }
+
+        .btn-danger:hover {
+            background-color: #da190b;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .result.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+
+        .result.error {
+            background-color: #ffebee;
+            color: #c62828;
+            display: block;
+        }
+
+        .feedback-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .history-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .history-item.feedback {
+            border-left-color: #ff9800;
+        }
+
+        .class-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #4CAF50;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Animal Classifier - Enhanced</h1>
+            <p>Zero-Shot Learning with Multi-Class Management</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('classify')">Classify</button>
+            <button class="tab" onclick="showTab('batch')">Batch Process</button>
+            <button class="tab" onclick="showTab('classes')">Manage Classes</button>
+            <button class="tab" onclick="showTab('history')">History</button>
+        </div>
+
+        <!-- Classify Tab -->
+        <div id="classify" class="tab-content active">
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="upload-area" id="dropZone">
+                    <p>Drag and drop an image or click to select</p>
+                    <input type="file" name="file" id="fileInput" accept="image/*" required style="display: none;">
+                </div>
+                <div class="preview-container" id="previewContainer">
+                    <img id="previewImage" class="preview-image" src="" alt="Preview">
+                </div>
+                <button type="submit" class="btn" id="uploadButton" disabled>Classify Image</button>
+            </form>
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p>Analyzing image...</p>
+            </div>
+            <div class="result" id="result"></div>
+            <div class="feedback-section" id="feedbackSection">
+                <h3>Was this prediction correct?</h3>
+                <div class="form-group">
+                    <label>Correct Animal:</label>
+                    <select id="correctAnimal">
+                        <option value="">Select correct animal...</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="submitFeedback()">Submit Feedback</button>
+            </div>
+        </div>
+
+        <!-- Batch Process Tab -->
+        <div id="batch" class="tab-content">
+            <form id="batchForm" enctype="multipart/form-data">
+                <div class="upload-area" id="batchDropZone">
+                    <p>Select multiple images (max 10)</p>
+                    <input type="file" name="files" id="batchFileInput" accept="image/*" multiple style="display: none;">
+                </div>
+                <button type="submit" class="btn" id="batchButton" disabled>Process Batch</button>
+            </form>
+            <div class="loading" id="batchLoading">
+                <div class="loading-spinner"></div>
+                <p>Processing images...</p>
+            </div>
+            <div id="batchResults"></div>
+        </div>
+
+        <!-- Classes Tab -->
+        <div id="classes" class="tab-content">
+            <div class="grid">
+                <div>
+                    <h3>Current Classes</h3>
+                    <div id="classesList"></div>
+                </div>
+                <div>
+                    <h3>Add New Class</h3>
+                    <div class="form-group">
+                        <label>Class Name:</label>
+                        <input type="text" id="newClassName" placeholder="e.g., lion">
+                    </div>
+                    <div class="form-group">
+                        <label>Embedding (comma-separated):</label>
+                        <input type="text" id="newClassEmbedding" placeholder="0.1, 0.2, 0.3">
+                    </div>
+                    <button class="btn" onclick="addClass()">Add Class</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history" class="tab-content">
+            <h3>Prediction History</h3>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentPrediction = null;
+        let availableClasses = [];
+
+        // Tab management
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'classes') loadClasses();
+            if (tabName === 'history') loadHistory();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadClasses();
+            setupUpload();
+            setupBatchUpload();
+        });
+
+        // Load available classes
+        async function loadClasses() {
+            try {
+                const response = await fetch('/api/classes');
+                availableClasses = await response.json();
+                
+                // Update feedback dropdown
+                const select = document.getElementById('correctAnimal');
+                select.innerHTML = '<option value="">Select correct animal...</option>';
+                availableClasses.forEach(cls => {
+                    select.innerHTML += `<option value="${cls}">${cls}</option>`;
+                });
+                
+                // Update classes list
+                const classesList = document.getElementById('classesList');
+                classesList.innerHTML = '';
+                availableClasses.forEach(cls => {
+                    classesList.innerHTML += `
+                        <div class="class-item">
+                            <span>${cls}</span>
+                            <button class="btn btn-danger" onclick="deleteClass('${cls}')">Delete</button>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error loading classes:', error);
+            }
+        }
+
+        // Setup single upload
+        function setupUpload() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            const previewContainer = document.getElementById('previewContainer');
+            const previewImage = document.getElementById('previewImage');
+            const uploadButton = document.getElementById('uploadButton');
+
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#4CAF50';
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#ddd';
+                const files = e.dataTransfer.files;
+                if (files.length) {
+                    fileInput.files = files;
+                    handleFileSelect(files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+
+            function handleFileSelect(file) {
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        previewContainer.style.display = 'block';
+                        uploadButton.disabled = false;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                try {
+                    document.getElementById('loading').style.display = 'block';
+                    document.getElementById('result').style.display = 'none';
+                    document.getElementById('feedbackSection').style.display = 'none';
+
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        currentPrediction = {
+                            image: fileInput.files[0].name,
+                            prediction: data.predicted_class,
+                            confidence: data.confidence
+                        };
+                        
+                        showResult(`
+                            <div>Predicted Animal: <strong>${data.predicted_class}</strong></div>
+                            <div>Confidence: ${data.confidence}%</div>
+                        `, 'success');
+                        
+                        document.getElementById('feedbackSection').style.display = 'block';
+                    } else {
+                        showResult(`Error: ${data.error}`, 'error');
+                    }
+                } catch (error) {
+                    showResult('Processing failed', 'error');
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
+                }
+            });
+        }
+
+        // Setup batch upload
+        function setupBatchUpload() {
+            const dropZone = document.getElementById('batchDropZone');
+            const fileInput = document.getElementById('batchFileInput');
+            const button = document.getElementById('batchButton');
+
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', (e) => {
+                button.disabled = e.target.files.length === 0;
+            });
+
+            document.getElementById('batchForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData();
+                Array.from(fileInput.files).forEach(file => {
+                    formData.append('files', file);
+                });
+
+                try {
+                    document.getElementById('batchLoading').style.display = 'block';
+                    
+                    const response = await fetch('/api/batch', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    
+                    let resultsHtml = '<h3>Batch Results:</h3>';
+                    data.results.forEach(result => {
+                        if (result.error) {
+                            resultsHtml += `<div class="history-item"><strong>${result.filename}</strong>: Error - ${result.error}</div>`;
+                        } else {
+                            resultsHtml += `<div class="history-item"><strong>${result.filename}</strong>: ${result.predicted_class} (${result.confidence}%)</div>`;
+                        }
+                    });
+                    
+                    document.getElementById('batchResults').innerHTML = resultsHtml;
+                } catch (error) {
+                    document.getElementById('batchResults').innerHTML = '<div class="result error">Batch processing failed</div>';
+                } finally {
+                    document.getElementById('batchLoading').style.display = 'none';
+                }
+            });
+        }
+
+        // Submit feedback
+        async function submitFeedback() {
+            const correctAnimal = document.getElementById('correctAnimal').value;
+            if (!correctAnimal || !currentPrediction) return;
+
+            try {
+                await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image: currentPrediction.image,
+                        prediction: currentPrediction.prediction,
+                        confidence: currentPrediction.confidence,
+                        correct_class: correctAnimal
+                    })
+                });
+                
+                alert('Feedback submitted successfully!');
+                document.getElementById('feedbackSection').style.display = 'none';
+            } catch (error) {
+                alert('Failed to submit feedback');
+            }
+        }
+
+        // Add new class
+        async function addClass() {
+            const name = document.getElementById('newClassName').value.trim();
+            const embeddingStr = document.getElementById('newClassEmbedding').value.trim();
+            
+            if (!name || !embeddingStr) {
+                alert('Please provide both name and embedding');
+                return;
+            }
+
+            try {
+                const embedding = embeddingStr.split(',').map(x => parseFloat(x.trim()));
+                if (embedding.length !== 3 || embedding.some(isNaN)) {
+                    alert('Embedding must be 3 comma-separated numbers');
+                    return;
+                }
+
+                const response = await fetch('/api/classes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, embedding })
+                });
+
+                if (response.ok) {
+                    alert('Class added successfully!');
+                    document.getElementById('newClassName').value = '';
+                    document.getElementById('newClassEmbedding').value = '';
+                    loadClasses();
+                } else {
+                    const data = await response.json();
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert('Failed to add class');
+            }
+        }
+
+        // Delete class
+        async function deleteClass(className) {
+            if (!confirm(`Delete class "${className}"?`)) return;
+
+            try {
+                const response = await fetch(`/api/classes/${className}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('Class deleted successfully!');
+                    loadClasses();
+                } else {
+                    alert('Failed to delete class');
+                }
+            } catch (error) {
+                alert('Failed to delete class');
+            }
+        }
+
+        // Load history
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/history');
+                const history = await response.json();
+                
+                const historyList = document.getElementById('historyList');
+                historyList.innerHTML = '';
+                
+                history.reverse().forEach(item => {
+                    const feedbackClass = item.feedback ? 'feedback' : '';
+                    historyList.innerHTML += `
+                        <div class="history-item ${feedbackClass}">
+                            <strong>${item.image}</strong><br>
+                            Predicted: ${item.prediction} (${item.confidence}%)<br>
+                            ${item.feedback ? `Correct: ${item.feedback}<br>` : ''}
+                            <small>${new Date(item.timestamp).toLocaleString()}</small>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                document.getElementById('historyList').innerHTML = '<div class="result error">Failed to load history</div>';
+            }
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

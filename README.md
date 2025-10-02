@@ -6,13 +6,25 @@ A web-based animal classification system using Zero-Shot Learning and ResNet, bu
 
 ## Features
 
+### Core Features
 - 🖼️ Real-time image classification
 - 🔄 Zero-Shot Learning capabilities
 - 🎯 High accuracy with ResNet backbone
-- 🌐 Web-based interface with drag-and-drop support
+- 🌐 Enhanced web interface with tabbed navigation
 - 📊 Confidence scores for predictions
 - 🚀 Fast inference time
 - 📱 Responsive design
+
+### Enhanced Features
+- 🔧 **Dynamic Class Management**: Add/remove animal classes via API
+- 📦 **Batch Processing**: Process multiple images simultaneously
+- 📝 **Feedback System**: Users can correct predictions
+- 📈 **Prediction History**: Track all classifications
+- 🔒 **Security & Rate Limiting**: Protection against abuse
+- 🐳 **Docker Support**: Easy containerized deployment
+- 📚 **API Documentation**: Swagger/OpenAPI docs
+- 🧪 **Testing Suite**: Comprehensive unit tests
+- ⚙️ **Configuration Management**: Environment-based settings
 
 ## Live Demo
 
@@ -27,6 +39,24 @@ Try it out: [Animal Classifier Demo](https://animal-classifier-with-zero-shot-le
 - **Vector Similarity**: scikit-learn
 
 ## Installation
+
+### Quick Start with Docker (Recommended)
+
+1. Clone the repository:
+```bash
+git clone https://github.com/jmrashed/Animal-classifier-with-zero-shot-learning.git
+cd Animal-classifier-with-zero-shot-learning
+```
+
+2. Deploy with Docker:
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+The application will be available at `http://localhost`
+
+### Manual Installation
 
 1. Clone the repository:
 ```bash
@@ -44,12 +74,12 @@ venv\Scripts\activate  # For Windows
 
 3. Install dependencies:
 ```bash
-pip install -r requirements.txt
+pip install -r requirements_enhanced.txt
 ```
 
-4. Run the application:
+4. Run the enhanced application:
 ```bash
-python app.py
+python app_enhanced.py
 ```
 
 The application will be available at `http://localhost:5001`
@@ -83,20 +113,41 @@ Animal-classifier-with-zero-shot-learning/
 
 ## API Endpoints
 
-### POST /upload
-Upload an image for classification.
+### Classification
+- `POST /upload` - Upload single image for classification
+- `POST /api/batch` - Process multiple images (max 10)
 
-**Request**:
-- Method: POST
-- Content-Type: multipart/form-data
-- Body: file (image file)
+### Class Management
+- `GET /api/classes` - Get all available classes
+- `POST /api/classes` - Add new animal class
+- `DELETE /api/classes/{name}` - Delete animal class
 
-**Response**:
-```json
-{
-    "predicted_class": "cat",
-    "confidence": 95.5
-}
+### Feedback & History
+- `POST /api/feedback` - Submit feedback for predictions
+- `GET /api/history` - Get prediction history
+
+### Documentation
+- `GET /docs/` - Interactive API documentation (Swagger UI)
+
+### Example Requests
+
+**Single Image Classification:**
+```bash
+curl -X POST -F "file=@image.jpg" http://localhost:5001/upload
+```
+
+**Add New Class:**
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"name":"lion","embedding":[0.1,0.2,0.3]}' \
+  http://localhost:5001/api/classes
+```
+
+**Submit Feedback:**
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"image":"test.jpg","prediction":"cat","confidence":95.5,"correct_class":"dog"}' \
+  http://localhost:5001/api/feedback
 ```
 
 ## Zero-Shot Learning
@@ -117,25 +168,55 @@ Currently supported animal classes:
 
 ## Development
 
-To add new animal classes:
+### Adding New Animal Classes
 
-1. Add class embeddings to `class_embeddings` dictionary in `app.py`:
-```python
-class_embeddings = {
-    "new_animal": np.array([0.x, 0.y, 0.z])
-}
+**Via API (Recommended):**
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"name":"tiger","embedding":[0.6,0.3,0.8]}' \
+  http://localhost:5001/api/classes
 ```
 
-2. Update the projection layer if needed:
-```python
-class ProjectionLayer(nn.Module):
-    def __init__(self, input_dim=2048, output_dim=512):
-        super().__init__()
-        self.projection = nn.Sequential(
-            nn.Linear(input_dim, output_dim),
-            nn.ReLU(),
-            nn.Linear(output_dim, embedding_dim)
-        )
+**Via Web Interface:**
+1. Go to the "Manage Classes" tab
+2. Enter class name and embedding values
+3. Click "Add Class"
+
+### Running Tests
+
+```bash
+# Run all tests
+python -m pytest tests/
+
+# Run with coverage
+python -m pytest tests/ --cov=app_enhanced
+
+# Run specific test
+python -m pytest tests/test_app.py::TestAnimalClassifier::test_add_class
+```
+
+### Configuration
+
+Set environment variables in `.env` file:
+```bash
+SECRET_KEY=your-secret-key
+FLASK_ENV=production
+MODEL_DEVICE=cuda  # or cpu
+RATELIMIT_DEFAULT=100 per hour
+LOG_LEVEL=INFO
+```
+
+### Docker Development
+
+```bash
+# Build image
+docker build -t animal-classifier .
+
+# Run container
+docker run -p 5001:5001 animal-classifier
+
+# Development with volume mounting
+docker run -p 5001:5001 -v $(pwd):/app animal-classifier
 ```
 
 ## Contributing
